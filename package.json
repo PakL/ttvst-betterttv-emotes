@@ -1,0 +1,7 @@
+{
+	"name": "betterttv-emotes",
+	"description": "Adds BetterTTV emotes and displays them in messages",
+	"version": "0.1.0",
+	"systems": ["win32"],
+	"toolversion": "0.x.x"
+}
