@@ -111,5 +111,55 @@ class BetterTTVEmotes {
 		}
 	}
 
+	findAndReplaceInMessage(message) {
+		let replacings = []
+		let emotes = []
+		if(this.globalEmotes.hasOwnProperty('urlTemplate') && this.globalEmotes.hasOwnProperty('emotes')) {
+			if(this.globalEmotes.urlTemplate.startsWith('//'))
+				this.globalEmotes.urlTemplate = 'https:' + this.globalEmotes.urlTemplate
+
+			this.globalEmotes.emotes.forEach((em) => {
+				emotes.push({
+					code: em.code,
+					url: this.globalEmotes.urlTemplate.replace(/\{\{id\}\}/ig, em.id).replace(/\{\{image\}\}/ig, '1x')
+				})
+			})
+		}
+		if(this.channelEmotes.hasOwnProperty('urlTemplate') && this.channelEmotes.hasOwnProperty('emotes')) {
+			if(this.channelEmotes.urlTemplate.startsWith('//'))
+				this.channelEmotes.urlTemplate = 'https:' + this.channelEmotes.urlTemplate
+
+			this.channelEmotes.emotes.forEach((em) => {
+				emotes.push({
+					code: em.code,
+					url: this.channelEmotes.urlTemplate.replace(/\{\{id\}\}/ig, em.id).replace(/\{\{image\}\}/ig, '1x')
+				})
+			})
+		}
+
+		for(let i = 0; i < emotes.length; i++) {
+			var e = emotes[i]
+
+			var regex = new RegExp('(\\s|^)('+e.code.replace('(', '\\(').replace(')', '\\)')+')($|\\s)', 'g')
+			var matched = false
+			while(match = regex.exec(message)) {
+				regex.lastIndex = match.index+1
+				var ni = -1
+
+				var start = match.index
+				if(match[1].length > 0) start++
+				var end = start+match[2].length-1
+				ni = end+1
+
+				replacings.push({
+					'replaceWith': '<img src="' + e.url + '" srcset="' + e.url + ' 1x, ' + e.url.replace('/1x', '/2x') + ' 2x, ' + e.url.replace('/1x', '/3x') + ' 4x" alt="{__NEEDLE__}" title="{__NEEDLE__}" class="emote">',
+					'start': start,
+					'end': end
+				})
+			}
+		}
+		return replacings
+	}
+
 }
 module.exports = BetterTTVEmotes
