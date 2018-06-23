@@ -91,7 +91,11 @@ class BetterTTVEmotes {
 			})
 			if(globalEmoteSet.length > 0) emoteSets.push(globalEmoteSet)
 		}
-		
+		if(this.emoticonDrawer != null && this.emoticonDrawer.hasOwnProperty('_tag')) {
+			this.emoticonDrawer._tag.setemotes(this.emoticonDrawer._tag.emotes.concat(emoteSets))
+		}
+
+		emoteSets = []
 		if(this.channelEmotes.hasOwnProperty('urlTemplate') && this.channelEmotes.hasOwnProperty('emotes')) {
 			if(this.channelEmotes.urlTemplate.startsWith('//'))
 				this.channelEmotes.urlTemplate = 'https:' + this.channelEmotes.urlTemplate
@@ -107,7 +111,7 @@ class BetterTTVEmotes {
 		}
 
 		if(this.emoticonDrawer != null && this.emoticonDrawer.hasOwnProperty('_tag')) {
-			this.emoticonDrawer._tag.setemotes(this.emoticonDrawer._tag.emotes.concat(emoteSets))
+			this.emoticonDrawer._tag.setemotes(emoteSets.concat(this.emoticonDrawer._tag.emotes))
 		}
 	}
 
