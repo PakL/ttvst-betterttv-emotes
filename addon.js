@@ -10,16 +10,14 @@ class BetterTTVEmotes {
 		const self = this
 		this._tool = tool
 
-		this.emoticonDrawer = null
 		this.globalEmotes = {}
 		this.channelEmotes = {}
+		this.emoticonDrawer = document.querySelector('#chat_message_emotes_emoticons')
 
-		this._tool.on('load', async () => {
-			self.emoticonDrawer = document.querySelector('#chat_message_emotes_emoticons')
-			try {
-				self.globalEmotes = await self.loadEmotes()
-			} catch(e) {}
+		this.loadEmotes().then((emotes) => {
+			self.globalEmotes = emotes
 		})
+
 		this._tool.cockpit.on('channelopen', async () => {
 			self.channelEmotes = {}
 			try {
@@ -77,6 +75,7 @@ class BetterTTVEmotes {
 	{
 		await this.waitForTwitchEmotes()
 
+		const self = this
 		let emoteSets = []
 		if(this.globalEmotes.hasOwnProperty('urlTemplate') && this.globalEmotes.hasOwnProperty('emotes')) {
 			if(this.globalEmotes.urlTemplate.startsWith('//'))
@@ -86,7 +85,7 @@ class BetterTTVEmotes {
 			this.globalEmotes.emotes.forEach((em) => {
 				globalEmoteSet.push({
 					code: em.code,
-					url: this.globalEmotes.urlTemplate.replace(/\{\{id\}\}/ig, em.id).replace(/\{\{image\}\}/ig, '1x')
+					url: self.globalEmotes.urlTemplate.replace(/\{\{id\}\}/ig, em.id).replace(/\{\{image\}\}/ig, '1x')
 				})
 			})
 			if(globalEmoteSet.length > 0) emoteSets.push(globalEmoteSet)
@@ -104,7 +103,7 @@ class BetterTTVEmotes {
 			this.channelEmotes.emotes.forEach((em) => {
 				channelEmoteSet.push({
 					code: em.code,
-					url: this.channelEmotes.urlTemplate.replace(/\{\{id\}\}/ig, em.id).replace(/\{\{image\}\}/ig, '1x')
+					url: self.channelEmotes.urlTemplate.replace(/\{\{id\}\}/ig, em.id).replace(/\{\{image\}\}/ig, '1x')
 				})
 			})
 			if(channelEmoteSet.length > 0) emoteSets.push(channelEmoteSet)
