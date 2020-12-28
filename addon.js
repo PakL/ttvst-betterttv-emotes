@@ -21,7 +21,7 @@ class BetterTTVEmotes {
 		this._tool.cockpit.on('channelopen', async () => {
 			self.channelEmotes = {}
 			try {
-				self.channelEmotes = await self.loadEmotes(self._tool.cockpit.openChannelObject.login)
+				self.channelEmotes = await self.loadEmotes(self._tool.cockpit.openChannelObject.id)
 			} catch(e) {}
 			self.fillInEmotes()
 		})
@@ -33,7 +33,7 @@ class BetterTTVEmotes {
 		return new Promise((resolve, reject) => {
 			request({
 				method: 'GET',
-				uri: (channel.length > 0 ? 'https://api.betterttv.net/2/channels/' + encodeURIComponent(channel) : 'https://api.betterttv.net/2/emotes'),
+				uri: (channel.length > 0 ? 'https://api.betterttv.net/3/cached/users/twitch/' + encodeURIComponent(channel) : 'https://api.betterttv.net/3/cached/emotes/global'),
 				json: true
 			}, (error, response, body) => {
 				if(error) {
@@ -42,8 +42,10 @@ class BetterTTVEmotes {
 					if(response.statusCode !== 200) {
 						reject(new Error(response.statusCode + ' - ' + response.statusMessage))
 					} else {
-						if(typeof(body) == 'object' && body.hasOwnProperty('urlTemplate') && body.hasOwnProperty('emotes')) {
+						if(typeof(body) == 'object' && channel.length > 0 && (body.hasOwnProperty('channelEmotes') || body.hasOwnProperty('sharedEmotes'))) {
 							resolve(body)
+						} else if(typeof(body) == 'object' && Array.isArray(body)) {
+							resolve({ channelEmotes: body });
 						} else{
 							reject(new Error('Unexpetected response. Maybe the API has changed?'))
 						}
@@ -77,12 +79,11 @@ class BetterTTVEmotes {
 
 		const self = this
 		let emoteSets = []
-		if(this.globalEmotes.hasOwnProperty('urlTemplate') && this.globalEmotes.hasOwnProperty('emotes')) {
-			if(this.globalEmotes.urlTemplate.startsWith('//'))
-				this.globalEmotes.urlTemplate = 'https:' + this.globalEmotes.urlTemplate
+		if(this.globalEmotes.hasOwnProperty('channelEmotes')) {
+			this.globalEmotes.urlTemplate = 'https://cdn.betterttv.net/emote/{{id}}/{{image}}'
 
 			let globalEmoteSet = []
-			this.globalEmotes.emotes.forEach((em) => {
+			this.globalEmotes.channelEmotes.forEach((em) => {
 				globalEmoteSet.push({
 					code: em.code,
 					url: self.globalEmotes.urlTemplate.replace(/\{\{id\}\}/ig, em.id).replace(/\{\{image\}\}/ig, '1x')
@@ -95,19 +96,28 @@ class BetterTTVEmotes {
 		}
 
 		emoteSets = []
-		if(this.channelEmotes.hasOwnProperty('urlTemplate') && this.channelEmotes.hasOwnProperty('emotes')) {
-			if(this.channelEmotes.urlTemplate.startsWith('//'))
-				this.channelEmotes.urlTemplate = 'https:' + this.channelEmotes.urlTemplate
+		let channelEmoteSet = []
+		if(this.channelEmotes.hasOwnProperty('channelEmotes')) {
+			this.channelEmotes.urlTemplate = 'https://cdn.betterttv.net/emote/{{id}}/{{image}}'
 
-			let channelEmoteSet = []
-			this.channelEmotes.emotes.forEach((em) => {
+			this.channelEmotes.channelEmotes.forEach((em) => {
 				channelEmoteSet.push({
 					code: em.code,
 					url: self.channelEmotes.urlTemplate.replace(/\{\{id\}\}/ig, em.id).replace(/\{\{image\}\}/ig, '1x')
 				})
 			})
-			if(channelEmoteSet.length > 0) emoteSets.push(channelEmoteSet)
 		}
+		if(this.channelEmotes.hasOwnProperty('sharedEmotes')) {
+			this.channelEmotes.urlTemplate = 'https://cdn.betterttv.net/emote/{{id}}/{{image}}'
+
+			this.channelEmotes.sharedEmotes.forEach((em) => {
+				channelEmoteSet.push({
+					code: em.code,
+					url: self.channelEmotes.urlTemplate.replace(/\{\{id\}\}/ig, em.id).replace(/\{\{image\}\}/ig, '1x')
+				})
+			})
+		}
+		if(channelEmoteSet.length > 0) emoteSets.push(channelEmoteSet)
 
 		if(this.emoticonDrawer != null && this.emoticonDrawer.hasOwnProperty('_tag')) {
 			this.emoticonDrawer._tag.setemotes(emoteSets.concat(this.emoticonDrawer._tag.emotes))
@@ -117,22 +127,30 @@ class BetterTTVEmotes {
 	findAndReplaceInMessage(message) {
 		let replacings = []
 		let emotes = []
-		if(this.globalEmotes.hasOwnProperty('urlTemplate') && this.globalEmotes.hasOwnProperty('emotes')) {
-			if(this.globalEmotes.urlTemplate.startsWith('//'))
-				this.globalEmotes.urlTemplate = 'https:' + this.globalEmotes.urlTemplate
+		if(this.globalEmotes.hasOwnProperty('channelEmotes')) {
+			this.globalEmotes.urlTemplate = 'https://cdn.betterttv.net/emote/{{id}}/{{image}}'
 
-			this.globalEmotes.emotes.forEach((em) => {
+			this.globalEmotes.channelEmotes.forEach((em) => {
 				emotes.push({
 					code: em.code,
 					url: this.globalEmotes.urlTemplate.replace(/\{\{id\}\}/ig, em.id).replace(/\{\{image\}\}/ig, '1x')
 				})
 			})
 		}
-		if(this.channelEmotes.hasOwnProperty('urlTemplate') && this.channelEmotes.hasOwnProperty('emotes')) {
-			if(this.channelEmotes.urlTemplate.startsWith('//'))
-				this.channelEmotes.urlTemplate = 'https:' + this.channelEmotes.urlTemplate
+		if(this.channelEmotes.hasOwnProperty('channelEmotes')) {
+			this.channelEmotes.urlTemplate = 'https://cdn.betterttv.net/emote/{{id}}/{{image}}'
 
-			this.channelEmotes.emotes.forEach((em) => {
+			this.channelEmotes.channelEmotes.forEach((em) => {
+				emotes.push({
+					code: em.code,
+					url: this.channelEmotes.urlTemplate.replace(/\{\{id\}\}/ig, em.id).replace(/\{\{image\}\}/ig, '1x')
+				})
+			})
+		}
+		if(this.channelEmotes.hasOwnProperty('sharedEmotes')) {
+			this.channelEmotes.urlTemplate = 'https://cdn.betterttv.net/emote/{{id}}/{{image}}'
+
+			this.channelEmotes.sharedEmotes.forEach((em) => {
 				emotes.push({
 					code: em.code,
 					url: this.channelEmotes.urlTemplate.replace(/\{\{id\}\}/ig, em.id).replace(/\{\{image\}\}/ig, '1x')
